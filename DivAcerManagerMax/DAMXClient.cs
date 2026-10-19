@@ -298,13 +298,26 @@ public class DAMXClient : IDisposable
     /// <summary>
     ///     Set PS5-style adaptive temperature threshold fan control mode
     /// </summary>
-    public async Task<bool> SetFanThresholdModeAsync(bool enabled, double targetCpu = 75.0, double targetGpu = 70.0, bool enableTurbo = true, bool syncFans = true)
+    public async Task<bool> SetFanThresholdModeAsync(
+        bool enabled,
+        double targetTemp = 75.0,
+        bool enableTurbo = true,
+        bool syncFans = true,
+        double? targetCpu = null,
+        double? targetGpu = null)
     {
+        double effectiveTarget = targetTemp;
+        if (targetCpu.HasValue || targetGpu.HasValue)
+        {
+            effectiveTarget = Math.Max(targetCpu ?? targetTemp, targetGpu ?? targetTemp);
+        }
+
         var parameters = new Dictionary<string, object>
         {
             { "enabled", enabled },
-            { "target_cpu", targetCpu },
-            { "target_gpu", targetGpu },
+            { "target_temp", effectiveTarget },
+            { "target_cpu", targetCpu ?? effectiveTarget },
+            { "target_gpu", targetGpu ?? effectiveTarget },
             { "enable_turbo", enableTurbo },
             { "sync_fans", syncFans }
         };

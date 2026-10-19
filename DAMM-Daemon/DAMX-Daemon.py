@@ -823,12 +823,13 @@ class DAMXManager:
             f"{cpu},{gpu}"
         )
 
-    def set_fan_threshold_mode(self, enabled: bool, target_cpu: float = 75.0, target_gpu: float = 70.0, enable_turbo: bool = True, sync_fans: bool = True) -> bool:
+    def set_fan_threshold_mode(self, enabled: bool, target_cpu: float = 75.0, target_gpu: float = 70.0, enable_turbo: bool = True, sync_fans: bool = True, target_temp: Optional[float] = None) -> bool:
         """Set PS5-style adaptive temperature threshold fan control"""
         if not hasattr(self, 'adaptive_fan'):
             return False
         if enabled:
-            self.adaptive_fan.configure(target_cpu=target_cpu, target_gpu=target_gpu, enable_turbo=enable_turbo, sync_fans=sync_fans)
+            effective_target = target_temp if target_temp is not None else max(target_cpu, target_gpu)
+            self.adaptive_fan.configure(target=effective_target, target_cpu=target_cpu, target_gpu=target_gpu, enable_turbo=enable_turbo, sync_fans=sync_fans)
             self.adaptive_fan.start()
             return True
         else:
@@ -1299,11 +1300,16 @@ class DaemonServer:
 
             elif command == "set_fan_threshold_mode":
                 enabled = params.get("enabled", False)
+                target_temp = params.get("target_temp", None)
                 target_cpu = params.get("target_cpu", 75.0)
                 target_gpu = params.get("target_gpu", 70.0)
                 enable_turbo = params.get("enable_turbo", True)
                 sync_fans = params.get("sync_fans", True)
-                success = self.manager.set_fan_threshold_mode(enabled, target_cpu, target_gpu, enable_turbo, sync_fans)
+                success = self.manager.set_fan_threshold_mode(
+                    enabled, target_cpu=target_cpu, target_gpu=target_gpu,
+                    enable_turbo=enable_turbo, sync_fans=sync_fans,
+                    target_temp=target_temp
+                )
                 return {
                     "success": success,
                     "data": self.manager.get_fan_threshold_status() if success else None,

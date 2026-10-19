@@ -43,10 +43,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     // UI Controls (will be bound via NameScope)
     private Button _applyKeyboardColorsButton;
     private RadioButton _adaptiveFanSpeedRadioButton;
-    private Slider _cpuTargetSlider;
-    private Slider _gpuTargetSlider;
-    private TextBlock _cpuTargetTextBlock;
-    private TextBlock _gpuTargetTextBlock;
+    private Slider _targetTempSlider;
+    private TextBlock _targetTempTextBlock;
     private CheckBox _turboBoostCheckBox;
     private CheckBox _syncFansCheckBox;
     private Button _setAdaptiveThresholdButton;
@@ -153,10 +151,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _setManualSpeedButton = nameScope.Find<Button>("SetManualSpeedButton");
         _autoFanSpeedRadioButton = nameScope.Find<RadioButton>("AutoFanSpeedRadioButton");
         _adaptiveFanSpeedRadioButton = nameScope.Find<RadioButton>("AdaptiveFanSpeedRadioButton");
-        _cpuTargetSlider = nameScope.Find<Slider>("CpuTargetSlider");
-        _gpuTargetSlider = nameScope.Find<Slider>("GpuTargetSlider");
-        _cpuTargetTextBlock = nameScope.Find<TextBlock>("CpuTargetTextBlock");
-        _gpuTargetTextBlock = nameScope.Find<TextBlock>("GpuTargetTextBlock");
+        _targetTempSlider = nameScope.Find<Slider>("TargetTempSlider");
+        _targetTempTextBlock = nameScope.Find<TextBlock>("TargetTempTextBlock");
         _turboBoostCheckBox = nameScope.Find<CheckBox>("TurboBoostCheckBox");
         _syncFansCheckBox = nameScope.Find<CheckBox>("SyncFansCheckBox");
         _setAdaptiveThresholdButton = nameScope.Find<Button>("SetAdaptiveThresholdButton");
@@ -234,8 +230,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_gpuFanSlider != null) _gpuFanSlider.PropertyChanged += GpuFanSlider_ValueChanged;
         if (_autoFanSpeedRadioButton != null) _autoFanSpeedRadioButton.Click += AutoFanSpeedRadioButtonClick;
         if (_setManualSpeedButton != null) _setManualSpeedButton.Click += SetManualSpeedButton_OnClick;
-        if (_cpuTargetSlider != null) _cpuTargetSlider.PropertyChanged += CpuTargetSlider_ValueChanged;
-        if (_gpuTargetSlider != null) _gpuTargetSlider.PropertyChanged += GpuTargetSlider_ValueChanged;
+        if (_targetTempSlider != null) _targetTempSlider.PropertyChanged += TargetTempSlider_ValueChanged;
 
         // Battery calibration handlers
         if (_startCalibrationButton != null) _startCalibrationButton.Click += StartCalibrationButton_Click;
@@ -840,8 +835,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (!_isConnected) return;
 
-        double targetCpu = _cpuTargetSlider?.Value ?? 75.0;
-        double targetGpu = _gpuTargetSlider?.Value ?? 70.0;
+        double targetTemp = _targetTempSlider?.Value ?? 75.0;
         bool enableTurbo = _turboBoostCheckBox?.IsChecked == true;
         bool syncFans = _syncFansCheckBox?.IsChecked == true;
 
@@ -849,15 +843,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         {
             var success = await _client.SetFanThresholdModeAsync(
                 enabled: true,
-                targetCpu: targetCpu,
-                targetGpu: targetGpu,
+                targetTemp: targetTemp,
                 enableTurbo: enableTurbo,
                 syncFans: syncFans
             );
 
             if (success)
             {
-                Console.WriteLine($"PS5 Mode activated: CPU={targetCpu}°C GPU={targetGpu}°C Turbo={enableTurbo} SyncFans={syncFans}");
+                Console.WriteLine($"PS5 Mode activated: Target={targetTemp}°C Turbo={enableTurbo} SyncFans={syncFans}");
             }
             else
             {
@@ -870,19 +863,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
-    private void CpuTargetSlider_ValueChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    private void TargetTempSlider_ValueChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.Property.Name == "Value" && _cpuTargetSlider != null && _cpuTargetTextBlock != null)
+        if (e.Property.Name == "Value" && _targetTempSlider != null && _targetTempTextBlock != null)
         {
-            _cpuTargetTextBlock.Text = $"{(int)_cpuTargetSlider.Value}°C";
-        }
-    }
-
-    private void GpuTargetSlider_ValueChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.Property.Name == "Value" && _gpuTargetSlider != null && _gpuTargetTextBlock != null)
-        {
-            _gpuTargetTextBlock.Text = $"{(int)_gpuTargetSlider.Value}°C";
+            _targetTempTextBlock.Text = $"{(int)_targetTempSlider.Value}°C";
         }
     }
 

@@ -537,10 +537,10 @@ class AdaptiveFanController:
         return max(legacy) if legacy else 80.0
 
     def _set_target(self, value: float) -> None:
-        hi = self.emergency_temp - 4.0
-        new = _clamp(float(value), 60.0, hi)
+        hi = max(50.0, self.emergency_temp - 3.0)
+        new = _clamp(float(value), 45.0, hi)
         if abs(new - float(value)) > 1e-9:
-            log.warning("Target %.1f°C di luar rentang aman (60..%.0f) -> dipakai %.1f°C", value, hi, new)
+            log.warning("Target %.1f°C di luar rentang aman (45..%.0f) -> dipakai %.1f°C", value, hi, new)
         self.setpoint = new
 
     def configure(self,
