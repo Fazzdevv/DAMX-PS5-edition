@@ -54,12 +54,13 @@ from typing import Any, Dict, List, Optional, Tuple
 log = logging.getLogger("AdaptiveFan")
 
 TEMP_MIN, TEMP_MAX = 5.0, 125.0   # di luar rentang ini pembacaan dianggap rusak
-DEFAULT_LOAD_W = 80.0             # beban "semu" bila tidak ada sensor daya sama sekali
+DEFAULT_LOAD_W = 50.0             # beban "semu" bila tidak ada sensor daya sama sekali
 
-# Titik beban (watt: CPU package + GPU) untuk tabel baseline, dan tebakan awal duty (%) untuk MENAHAN target
-# pada beban itu. Tebakan hanyalah titik awal; hasil belajar yang menggantikannya.
-LOAD_KNOTS_W = [0.0, 20.0, 40.0, 60.0, 80.0, 100.0, 130.0, 160.0, 200.0, 250.0]
-PRIOR_DUTY = [20.0, 22.0, 30.0, 38.0, 47.0, 56.0, 68.0, 80.0, 92.0, 100.0]
+# Titik beban EFEKTIF (W): (2×CPU_W + GPU_W) untuk laptop 120W TDP (Acer Nitro / Helios)
+# Max efektif ~165W: saat CPU 45W×2 + GPU 75W pada kondisi gaming berat.
+# Tebakan awal duty hanyalah titik awal; hasil belajar yang menggantikannya.
+LOAD_KNOTS_W = [0.0, 15.0, 30.0, 50.0, 70.0, 90.0, 110.0, 130.0, 150.0, 165.0]
+PRIOR_DUTY   = [20.0, 21.0, 26.0, 33.0, 42.0, 52.0,  63.0,  76.0,  90.0, 100.0]
 
 
 # ------------------------------------------------------------------------------------------------ helpers
@@ -120,7 +121,7 @@ def default_state_file() -> str:
 class LoadTable:
     """Tabel baseline duty (%) terhadap beban (W): interpolasi linear, belajar lewat NLMS + proyeksi monoton."""
 
-    VERSION = 2
+    VERSION = 3  # Bump versi → reset otomatis learned_fan.json lama yg punya knot berbeda
 
     def __init__(self, min_duty: float = 20.0):
         self.min_duty = min_duty
