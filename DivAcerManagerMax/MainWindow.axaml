@@ -172,11 +172,61 @@
                                             </StackPanel>
                                         </RadioButton>
 
+                                        <RadioButton x:Name="AdaptiveFanSpeedRadioButton" GroupName="FanModeGroup"
+                                                     Margin="0 0 15 0"
+                                                     Click="AdaptiveFanSpeedRadioButton_OnClick">
+                                            <StackPanel>
+                                                <material:MaterialIcon Kind="Brain" Width="48"
+                                                                       Height="48" />
+                                                <TextBlock Text="PS5 Mode" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </RadioButton>
+
                                     </StackPanel>
                                     <TextBlock x:Name="ManualDisabledInfoText" Opacity="0.5"
                                                Text="Manual fan controls are disabled to ensure quiet operation"
                                                HorizontalAlignment="Center" Margin="0,20,0 ,0"
                                                IsVisible="{Binding ElementName=QuietProfileButton, Path=IsChecked}" />
+
+                                    <!-- PS5 Adaptive Threshold Mode Panel -->
+                                    <StackPanel
+                                        IsVisible="{Binding ElementName=AdaptiveFanSpeedRadioButton, Path=IsChecked}">
+
+                                        <TextBlock Text="PS5-Style Target Threshold &amp; Self-Learning" FontWeight="Bold" Margin="0 10 0 5" />
+                                        <TextBlock Text="Fans adjust smoothly to keep temperature at target, eliminating sudden fan whine." Opacity="0.7" FontSize="12" Margin="0 0 0 10" />
+
+                                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto"
+                                              Margin="0 5">
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Target CPU:"
+                                                       VerticalAlignment="Center" Width="90" />
+                                            <Slider x:Name="CpuTargetSlider" Grid.Row="0" Grid.Column="1" Minimum="55" Maximum="90" Value="75" />
+                                            <TextBlock x:Name="CpuTargetTextBlock" Grid.Row="0" Grid.Column="2"
+                                                       Text="75°C"
+                                                       Width="50" TextAlignment="Right" />
+
+                                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Target GPU:"
+                                                       VerticalAlignment="Center" Width="90" Margin="0 15 0 0" />
+                                            <Slider x:Name="GpuTargetSlider" Grid.Row="1" Grid.Column="1" Minimum="50" Maximum="85" Value="70"
+                                                    Margin="0 15 0 0" />
+                                            <TextBlock x:Name="GpuTargetTextBlock" Grid.Row="1" Grid.Column="2"
+                                                       Text="70°C"
+                                                       Width="50" TextAlignment="Right" Margin="0 15 0 0" />
+                                        </Grid>
+
+                                        <CheckBox x:Name="TurboBoostCheckBox" Content="Unlock Full Turbo / Maximum Performance Power Limits"
+                                                  IsChecked="True" Margin="0 10 0 5" />
+
+                                        <CheckBox x:Name="SyncFansCheckBox" Content="Synchronize CPU &amp; GPU Fans (Shared Heatpipes Cooling)"
+                                                  IsChecked="True" Margin="0 0 0 5" />
+
+                                        <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
+                                            <Button x:Name="SetAdaptiveThresholdButton" Content="Apply PS5 Mode"
+                                                    Margin="0 0 10 0" Click="SetAdaptiveThresholdButton_OnClick" />
+                                        </StackPanel>
+
+                                        <TextBlock Text="Self-learning will automatically calibrate and save the quietest fan speeds over time."
+                                                   Foreground="#38BDF8" Margin="0 10 0 0" FontSize="12" />
+                                    </StackPanel>
 
                                     <StackPanel
                                         IsVisible="{Binding ElementName=ManualFanSpeedRadioButton , Path=IsChecked}">

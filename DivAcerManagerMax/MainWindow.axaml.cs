@@ -42,6 +42,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     // UI Controls (will be bound via NameScope)
     private Button _applyKeyboardColorsButton;
+    private RadioButton _adaptiveFanSpeedRadioButton;
+    private Slider _cpuTargetSlider;
+    private Slider _gpuTargetSlider;
+    private TextBlock _cpuTargetTextBlock;
+    private TextBlock _gpuTargetTextBlock;
+    private CheckBox _turboBoostCheckBox;
+    private CheckBox _syncFansCheckBox;
+    private Button _setAdaptiveThresholdButton;
     private RadioButton _autoFanSpeedRadioButton;
     private CheckBox _backlightTimeoutCheckBox;
     private RadioButton _balancedProfileButton;
@@ -144,6 +152,14 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         _gpuFanTextBlock = nameScope.Find<TextBlock>("GpuFanTextBlock");
         _setManualSpeedButton = nameScope.Find<Button>("SetManualSpeedButton");
         _autoFanSpeedRadioButton = nameScope.Find<RadioButton>("AutoFanSpeedRadioButton");
+        _adaptiveFanSpeedRadioButton = nameScope.Find<RadioButton>("AdaptiveFanSpeedRadioButton");
+        _cpuTargetSlider = nameScope.Find<Slider>("CpuTargetSlider");
+        _gpuTargetSlider = nameScope.Find<Slider>("GpuTargetSlider");
+        _cpuTargetTextBlock = nameScope.Find<TextBlock>("CpuTargetTextBlock");
+        _gpuTargetTextBlock = nameScope.Find<TextBlock>("GpuTargetTextBlock");
+        _turboBoostCheckBox = nameScope.Find<CheckBox>("TurboBoostCheckBox");
+        _syncFansCheckBox = nameScope.Find<CheckBox>("SyncFansCheckBox");
+        _setAdaptiveThresholdButton = nameScope.Find<Button>("SetAdaptiveThresholdButton");
 
         // Battery calibration controls
         _startCalibrationButton = nameScope.Find<Button>("StartCalibrationButton");
@@ -218,6 +234,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (_gpuFanSlider != null) _gpuFanSlider.PropertyChanged += GpuFanSlider_ValueChanged;
         if (_autoFanSpeedRadioButton != null) _autoFanSpeedRadioButton.Click += AutoFanSpeedRadioButtonClick;
         if (_setManualSpeedButton != null) _setManualSpeedButton.Click += SetManualSpeedButton_OnClick;
+        if (_cpuTargetSlider != null) _cpuTargetSlider.PropertyChanged += CpuTargetSlider_ValueChanged;
+        if (_gpuTargetSlider != null) _gpuTargetSlider.PropertyChanged += GpuTargetSlider_ValueChanged;
 
         // Battery calibration handlers
         if (_startCalibrationButton != null) _startCalibrationButton.Click += StartCalibrationButton_Click;
@@ -736,8 +754,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         await LoadSettingsAsync();
     }
 
-    private void ManualFanControlRadioBox_Click(object sender, RoutedEventArgs e)
+    private async void ManualFanControlRadioBox_Click(object sender, RoutedEventArgs e)
     {
+        // Stop PS5 mode if running
+        if (_isConnected)
+        {
+            try { await _client.SetFanThresholdModeAsync(enabled: false); } catch { }
+        }
         _isManualFanControl = true;
         if (_manualFanSpeedRadioButton != null) _manualFanSpeedRadioButton.IsChecked = true;
         if (_autoFanSpeedRadioButton != null) _autoFanSpeedRadioButton.IsChecked = false;
@@ -797,6 +820,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     {
         if (_isConnected)
         {
+            // Stop PS5 mode if running
+            try { await _client.SetFanThresholdModeAsync(enabled: false); } catch { }
             await _client.SetFanSpeedAsync(0, 0);
             _isManualFanControl = false;
             if (_manualFanSpeedRadioButton != null) _manualFanSpeedRadioButton.IsChecked = false;
@@ -804,10 +829,70 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private async void AdaptiveFanSpeedRadioButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        // When PS5 mode radio is clicked, stop manual fan control
+        _isManualFanControl = false;
+        if (_manualFanSpeedRadioButton != null) _manualFanSpeedRadioButton.IsChecked = false;
+    }
+
+    private async void SetAdaptiveThresholdButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!_isConnected) return;
+
+        double targetCpu = _cpuTargetSlider?.Value ?? 75.0;
+        double targetGpu = _gpuTargetSlider?.Value ?? 70.0;
+        bool enableTurbo = _turboBoostCheckBox?.IsChecked == true;
+        bool syncFans = _syncFansCheckBox?.IsChecked == true;
+
+        try
+        {
+            var success = await _client.SetFanThresholdModeAsync(
+                enabled: true,
+                targetCpu: targetCpu,
+                targetGpu: targetGpu,
+                enableTurbo: enableTurbo,
+                syncFans: syncFans
+            );
+
+            if (success)
+            {
+                Console.WriteLine($"PS5 Mode activated: CPU={targetCpu}°C GPU={targetGpu}°C Turbo={enableTurbo} SyncFans={syncFans}");
+            }
+            else
+            {
+                Console.WriteLine("Failed to activate PS5 Mode");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting PS5 mode: {ex.Message}");
+        }
+    }
+
+    private void CpuTargetSlider_ValueChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name == "Value" && _cpuTargetSlider != null && _cpuTargetTextBlock != null)
+        {
+            _cpuTargetTextBlock.Text = $"{(int)_cpuTargetSlider.Value}°C";
+        }
+    }
+
+    private void GpuTargetSlider_ValueChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property.Name == "Value" && _gpuTargetSlider != null && _gpuTargetTextBlock != null)
+        {
+            _gpuTargetTextBlock.Text = $"{(int)_gpuTargetSlider.Value}°C";
+        }
+    }
+
     private async void MaxFanSpeedRadioButton_OnClick(object? sender, RoutedEventArgs e)
     {
         if (!_isConnected)
             return;
+
+        // Stop PS5 mode if running
+        try { await _client.SetFanThresholdModeAsync(enabled: false); } catch { }
 
         _cpuFanSpeed = 100;
         _gpuFanSpeed = 100;

@@ -296,6 +296,32 @@ public class DAMXClient : IDisposable
     }
 
     /// <summary>
+    ///     Set PS5-style adaptive temperature threshold fan control mode
+    /// </summary>
+    public async Task<bool> SetFanThresholdModeAsync(bool enabled, double targetCpu = 75.0, double targetGpu = 70.0, bool enableTurbo = true, bool syncFans = true)
+    {
+        var parameters = new Dictionary<string, object>
+        {
+            { "enabled", enabled },
+            { "target_cpu", targetCpu },
+            { "target_gpu", targetGpu },
+            { "enable_turbo", enableTurbo },
+            { "sync_fans", syncFans }
+        };
+
+        var response = await SendCommandAsync("set_fan_threshold_mode", parameters);
+        return response.RootElement.GetProperty("success").GetBoolean();
+    }
+
+    /// <summary>
+    ///     Get status of adaptive fan threshold controller
+    /// </summary>
+    public async Task<JsonDocument> GetFanThresholdStatusAsync()
+    {
+        return await SendCommandAsync("get_fan_threshold_status");
+    }
+
+    /// <summary>
     ///     Set backlight timeout
     /// </summary>
     /// <param name="enabled">Enable or disable timeout</param>

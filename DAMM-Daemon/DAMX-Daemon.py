@@ -21,7 +21,8 @@ import traceback
 from pathlib import Path
 from enum import Enum
 from PowerSourceDetection import PowerSourceDetector 
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Tuple, Set, Any
+from AdaptiveFanController import AdaptiveFanController
 # from KeyboardMonitor import KeyboardMonitor
 
 # Constants
@@ -150,6 +151,9 @@ class DAMXManager:
             raise FileNotFoundError(f"Base path does not exist: {self.base_path}")
         
         self.power_monitor = None
+        self.adaptive_fan = AdaptiveFanController()
+        if "fan_speed" in self.available_features:
+            self.available_features.add("adaptive_fan_threshold")
 
     def _get_restart_attempts(self) -> int:
         """Get current restart attempt count"""
@@ -805,6 +809,10 @@ class DAMXManager:
         if "fan_speed" not in self.available_features:
             return False
 
+        # If adaptive PS5 threshold fan is running, stop it when user manually changes speed
+        if hasattr(self, 'adaptive_fan') and self.adaptive_fan.running:
+            self.adaptive_fan.stop()
+
         # Validate values
         if not (0 <= cpu <= 100 and 0 <= gpu <= 100):
             log.error(f"Invalid fan speeds. Values must be between 0 and 100: cpu={cpu}, gpu={gpu}")
@@ -814,6 +822,24 @@ class DAMXManager:
             os.path.join(self.base_path, "fan_speed"),
             f"{cpu},{gpu}"
         )
+
+    def set_fan_threshold_mode(self, enabled: bool, target_cpu: float = 75.0, target_gpu: float = 70.0, enable_turbo: bool = True, sync_fans: bool = True) -> bool:
+        """Set PS5-style adaptive temperature threshold fan control"""
+        if not hasattr(self, 'adaptive_fan'):
+            return False
+        if enabled:
+            self.adaptive_fan.configure(target_cpu=target_cpu, target_gpu=target_gpu, enable_turbo=enable_turbo, sync_fans=sync_fans)
+            self.adaptive_fan.start()
+            return True
+        else:
+            self.adaptive_fan.stop()
+            return self.set_fan_speed(0, 0)
+
+    def get_fan_threshold_status(self) -> Dict[str, Any]:
+        """Get status of adaptive fan threshold controller"""
+        if hasattr(self, 'adaptive_fan'):
+            return self.adaptive_fan.get_status()
+        return {"running": False}
 
 
     def get_lcd_override(self) -> str:
@@ -999,6 +1025,8 @@ class DAMXManager:
                 "cpu": cpu_fan,
                 "gpu": gpu_fan
             }
+            if hasattr(self, 'adaptive_fan'):
+                settings["adaptive_fan"] = self.adaptive_fan.get_status()
 
         if "lcd_override" in self.available_features:
             settings["lcd_override"] = self.get_lcd_override()
@@ -1267,6 +1295,25 @@ class DaemonServer:
                     "success": success,
                     "data": {"cpu": cpu, "gpu": gpu} if success else None,
                     "error": "Failed to set fan speed" if not success else None
+                }
+
+            elif command == "set_fan_threshold_mode":
+                enabled = params.get("enabled", False)
+                target_cpu = params.get("target_cpu", 75.0)
+                target_gpu = params.get("target_gpu", 70.0)
+                enable_turbo = params.get("enable_turbo", True)
+                sync_fans = params.get("sync_fans", True)
+                success = self.manager.set_fan_threshold_mode(enabled, target_cpu, target_gpu, enable_turbo, sync_fans)
+                return {
+                    "success": success,
+                    "data": self.manager.get_fan_threshold_status() if success else None,
+                    "error": "Failed to set adaptive fan threshold mode" if not success else None
+                }
+
+            elif command == "get_fan_threshold_status":
+                return {
+                    "success": True,
+                    "data": self.manager.get_fan_threshold_status()
                 }
 
             elif command == "set_lcd_override":
@@ -1650,6 +1697,9 @@ class DAMXDaemon:
     
         if self.power_monitor:
             self.power_monitor.stop_monitoring()
+
+        if hasattr(self, 'manager') and self.manager and hasattr(self.manager, 'adaptive_fan'):
+            self.manager.adaptive_fan.stop()
     
         # Remove PID file
         try:
