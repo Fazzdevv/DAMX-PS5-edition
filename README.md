@@ -3,140 +3,116 @@
 </p>
 
 <h1 align="center">
-  Div Acer Manager Max
+  Div Acer Manager Max — PS5 Fan Edition 🎮💨
 </h1>
 
-**Div Acer Manager Max** is a feature-rich Linux GUI utility for Acer laptops powered by the incredible [Linuwu Sense](https://github.com/0x7375646F/Linuwu-Sense) drivers. It replicates and expands on Acer’s NitroSense and PredatorSense capabilities on Linux with full fan control, performance modes, battery optimization, backlight settings, and more — all wrapped in a modern Avalonia-based UI.
+<p align="center">
+  <strong>Advanced PS5-Style Acoustic Fan Management & WMI Laptop Control Suite for Acer Nitro & Predator on Linux</strong>
+</p>
 
-> [!CAUTION]
-> Project is under passive development.
+<p align="center">
+  <a href="https://github.com/Fazzdevv/DAMX-PS5-edition/releases"><img src="https://img.shields.io/github/v/release/Fazzdevv/DAMX-PS5-edition?color=blue&label=PS5%20Edition" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-green.svg" alt="License"></a>
+  <a href="https://github.com/PXDiv/Div-Acer-Manager-Max"><img src="https://img.shields.io/badge/Upstream-PXDiv%2FDAMX-purple.svg" alt="Upstream"></a>
+</p>
+
+---
+
+**Div Acer Manager Max (PS5 Fan Edition)** is an enhanced fork of [DAMX by PXDiv](https://github.com/PXDiv/Div-Acer-Manager-Max), powered by the [Linuwu Sense](https://github.com/0x7375646F/Linuwu-Sense) kernel drivers. 
+
+This edition introduces **PlayStation 5-style acoustic fan management** with **setpoint temperature thresholding**, **continuous self-learning calibration**, and **synchronized dual-fan cooling** tailored for gaming laptops with shared heatpipe architectures.
 
 ![Title Image](https://github.com/user-attachments/assets/a60898a6-a2b8-432e-b5a2-8d0a45c63484)
 
-<h4 align="center">
-⭐ Please star this repository to show support. It motivates me to make the project better for everyone
-</h4>  
+---
 
-## ✨ Features
+## 🎮 New PS5 Edition Features
 
-### ✅ Fully Implemented
+### 🎯 PS5-Style Target Temperature Threshold
+- Set your preferred target temperatures (e.g. **75°C CPU / 70°C GPU**).
+- Instead of erratic fan jumps whenever a core spikes, the controller gently calculates the minimal fan duty needed to keep temperatures locked at the target.
 
-* 🔋 **Performance / Thermal Profiles**
-  Eco, Silent, Balanced, Performance, Turbo — automatically adjusted based on AC/battery status
-  (e.g., Turbo hidden when on battery or unsupported)
+### 🔄 Synchronous Dual-Fan Lockstep (Shared Heatpipes)
+- Most Acer Nitro and Predator laptops share copper heatpipes across both CPU and GPU heatsinks.
+- Both fans spin in **100% unison** based on whichever component demands more cooling (`max(demand_cpu, demand_gpu)`).
+- **Acoustic Benefit:** Completely eliminates annoying acoustic pitch beating / humming caused by two fans spinning at slightly different RPMs.
 
-* 🌡 **Fan Control**
-  Manual and Auto fan speed modes
-  Manual disabled automatically when in Quiet profile
+### 🔇 Acoustic Slew-Rate Limiter (Anti-Revving)
+- Smooths out fan acceleration and deceleration curves.
+- **Ramp-Up:** Limited to gradual, imperceptible increases.
+- **Ramp-Down:** Decelerates extra slowly to prevent distracting sound pitch changes while gaming.
 
-* 💡 **LCD Override Setting**
-  Direct control over LCD power behavior
+### 🧠 Self-Learning Equilibrium Engine
+- Continuously learns the exact duty cycle required to hold equilibrium at target temperatures under different loads.
+- Saves calibration state to disk (`learned_equilibrium.json`) — the longer you use it, the quieter and more optimized it becomes!
 
-* 🎨 **Keyboard Backlight Timeout Control**
-  Customize the keyboard backlight timeout
+### ⚡ Full Turbo Boost Power Unlock
+- Optional checkbox to unlock full platform power and turbo limits while keeping the fan speed managed adaptively.
 
-* 🔊 **Boot Animation and Sound Toggle**
-  Enable/disable Acer's startup animations and sounds
+### 🛡️ Safety & Failsafe
+- Critical thermal override: instantly forces 100% fan speed if temperatures exceed 88°C.
+- Automatic failsafe: smoothly restores embedded controller (EC) Auto mode (0,0) when exiting or switching modes.
 
-* 💻 **Live System Info Display**
-  Shows real-time performance profile, fan settings, calibration state, and more
+---
 
-* 🧠 **Smart Daemon (Low Resource Use)**
+## ✨ Standard DAMX Features
 
-  * Auto-detects feature support per device
-  * Communicates with GUI in real-time
-  * Lightweight: uses \~10MB RAM
-  * Can run **independently** of GUI
-  * Recursive restart to fix software issues similar to those on Windows
+* 🔋 **Performance / Thermal Profiles:** Eco, Silent, Balanced, Performance, Turbo (auto-adjusted for AC/Battery)
+* 🌡 **Fan Modes:** Auto, Max, Manual, and PS5 Adaptive Mode
+* 💡 **LCD Overdrive Control:** Direct control over LCD refresh and overdrive behavior
+* 🎨 **Keyboard Backlight Timeout:** Customize keyboard RGB timeout settings
+* 🔊 **Boot Animation & Sound Toggle:** Enable or disable Acer startup sounds
+* 💻 **Live Dashboard:** Real-time RPM speedometer gauges, temperatures, CPU/GPU utilization, and battery stats
+* 🔘 **Nitro / PredatorSense Key Binding:** Hardware hook to open DAMX directly from the dedicated keyboard button
 
-* 🖥️ **Modern GUI**
+---
 
-  * Avalonia-based, clean and responsive
-  * Realtime Monitoring with Dashboard and accurate Tempreature Readings
-  * Dynamic UI hides unsupported features
-  * Real-time feedback from daemon
+## 🚀 Installation Guide
 
-## 🧭 Compatibility
+### Option 1: 1-Click Quick Install (Recommended)
+Download the standalone release package from the **[Releases](https://github.com/Fazzdevv/DAMX-PS5-edition/releases)** page:
 
-Check your device's compatibility here: [Compatibility List](https://github.com/PXDiv/Div-Acer-Manager-Max/blob/main/Compatibility.md)
+```bash
+# 1. Extract the release archive
+tar -xzf DAMX-1.0.2-PS5-Edition.tar.gz
+cd DAMX-1.0.2-PS5-Edition
 
-> Even if not here, DAMX will still work on most devices. Please file a issue on Linuwu-sense page (it will be ignored here)
+# 2. Run the quick installer
+sudo ./quick-install.sh
+```
+*No .NET SDK or Python compilation required — standalone binaries are pre-packaged.*
 
-## 🖥️ DAMX Installation Guide
+### Option 2: Interactive Menu Setup
+```bash
+sudo ./setup.sh
+```
+*Includes interactive options for Secure Boot module signing and Nitro key binding.*
 
-1. Download the latest release from the **[Releases](https://github.com/PXDiv/Div-Acer-Manager-Max/releases)** section.
+---
 
-2. Extract the downloaded package.
+## 🖥️ How to Use PS5 Mode
 
-3. Make the `setup.sh` script executable:
+1. Open **DAMX** from your **Application Menu / App Launcher** or by typing `DAMX` in terminal.
+2. Navigate to the **Power & Performance** tab.
+3. Under **Fan Speed Control**, click the **PS5 Mode** button (brain icon).
+4. Adjust your desired Target CPU and GPU temperatures.
+5. Click **Apply PS5 Mode**!
 
-   ```bash
-   chmod +x setup.sh
-   ```
+---
 
-4. Run the script:
+## 🔘 Nitro / PredatorSense Dedicated Key
 
-   * Right-click the setup file and choose **“Run in Terminal”**,
-     or open a terminal in the folder and run:
+During setup, you can bind your laptop's dedicated button (the **N** key on Nitros, or **PredatorSense** key on Predators) to automatically launch DAMX. Both send scancode `0xf5` (keycode `425` or `148`).
 
-     ```bash
-     ./setup.sh
-     ```
+---
 
-5. When prompted, choose an option from the menu:
+## 🤝 Credits & Acknowledgements
 
-   * `1` → Install
-   * `2` → Install without Drivers
-   * `3` → Uninstall
-   * `4` → Reinstall/Update
+* **Original DAMX Suite:** [PXDiv/Div-Acer-Manager-Max](https://github.com/PXDiv/Div-Acer-Manager-Max) by PXDiv.
+* **Kernel Drivers:** Built on [Linuwu Sense](https://github.com/0x7375646F/Linuwu-Sense) by 0x7375646F.
+* **PS5 Mode & Synchronous Cooling:** Developed by [Fazzdevv](https://github.com/Fazzdevv/DAMX-PS5-edition).
 
-6. Reboot your system after the installation completes.
-
-✅ That’s it—you’re all set!
-
-## 🔘 Nitro / PredatorSense Button
-
-During setup you can bind your laptop's dedicated button (the **N** key on
-Nitros, the **PredatorSense** key on Predators) to open DAMX. Both are the
-same button as far as the EC is concerned — it sends scancode `0xf5`, which
-the kernel maps to keycode `425` on most models. Some models carry a udev
-hwdb quirk that remaps it to `prog1` (`148`) instead, which is why setup
-captures the code from an actual press rather than assuming one.
-
-Confirmed so far: Nitro ANV16S-41, Predator PHN16S-71 (both `425`).
-
-**Note for keyd/kmonad users:** key remappers grab the keyboard exclusively,
-so the detection service never sees the button. Bind the key in the
-remapper's config instead (after keyd it typically surfaces as `f16` /
-`XF86Launch7`).
-
-## 🖥️ Troubleshooting
-
-You can check the logs at /var/log/DAMX_Daemon_Log.log
-
-If you get UNKNOWN as Laptop type, try restarting (it happens sometimes)
-But if it still happens that might mean the Drivers Installation failed, Make sure you have the appropriate kernel headers to compile the drivers.
-
-Also, check out the [FAQ page](https://github.com/PXDiv/Div-Acer-Manager-Max/blob/main/FAQ.md) before opening any issues.
-
-Please open a new issue or discussion and include the logs to get support and help the project grow if you need any info, report a bug or just give ideas for the future versions of DAMX
-
-## Screenshots
-
-![image](https://github.com/user-attachments/assets/10d44e8c-14e4-4441-b60c-538af1840cf6)
-![image](https://github.com/user-attachments/assets/89217b26-b94c-4c78-8fe8-3de2b22a7095)
-![image](https://github.com/user-attachments/assets/72a7b944-5efc-4520-83b6-88069fc05723)
-![image](https://github.com/user-attachments/assets/f9a9d663-70c6-482e-a0c4-15a4ea08a8d2)
-
-## ❤️ Powered by Linuwu
-
-The custom drivers for this project [Div-Linuwu Sense project](https://github.com/PXDiv/Div-Linuwu-Sense) is built entirely on top of the [Linuwu Sense](https://github.com/0x7375646F/Linuwu-Sense) drivers — huge thanks to their developers for enabling hardware-level access on Acer laptops.
-
-## 🤝 Contributing
-
-* Report bugs or request features via GitHub Issues
-* Submit pull requests to improve code or UI
-* Help test on different Acer laptop models
+---
 
 ## 📄 License
 
