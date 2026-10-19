@@ -522,6 +522,9 @@ class AdaptiveFanController:
         self.last_cpu: Optional[float] = None
         self.last_gpu: Optional[float] = None
         self._cpu_read_fail = 0
+        self.cpu_power_weight: float = 2.0   # Bobot termal heatpipe CPU vs GPU (asymmetric shared loop)
+        self.last_cpu_w: Optional[float] = None
+        self.last_gpu_w: Optional[float] = None
         self._last_rediscover = -1e9
 
         self._reset_state()
@@ -551,7 +554,8 @@ class AdaptiveFanController:
                   *,
                   target: Optional[float] = None,
                   deadband: Optional[float] = None,
-                  min_duty: Optional[float] = None) -> None:
+                  min_duty: Optional[float] = None,
+                  cpu_power_weight: Optional[float] = None) -> None:
         with self._lock:
             if target is not None or target_cpu is not None or target_gpu is not None:
                 self._set_target(self._resolve_target(target, target_cpu, target_gpu))
@@ -560,12 +564,14 @@ class AdaptiveFanController:
             if min_duty is not None:
                 self.min_duty = _clamp(float(min_duty), 5.0, 60.0)
                 self.table.min_duty = self.min_duty
+            if cpu_power_weight is not None:
+                self.cpu_power_weight = _clamp(float(cpu_power_weight), 1.0, 4.0)
             turbo_changed = enable_turbo is not None and bool(enable_turbo) != self.enable_turbo
             if enable_turbo is not None:
                 self.enable_turbo = bool(enable_turbo)
             running = self.running
-            log.info("Konfigurasi: target=%.1f°C deadband=±%.1f°C min=%d%% turbo=%s",
-                     self.setpoint, self.deadband, int(self.min_duty), self.enable_turbo)
+            log.info("Konfigurasi: target=%.1f°C deadband=±%.1f°C min=%d%% turbo=%s cpu_weight=%.1fx",
+                     self.setpoint, self.deadband, int(self.min_duty), self.enable_turbo, self.cpu_power_weight)
         if turbo_changed and running and not self.dry_run:
             if self.enable_turbo:
                 self._apply_turbo_profile()
@@ -802,6 +808,9 @@ class AdaptiveFanController:
                 "cpu_duty_pct": cmd,
                 "gpu_duty_pct": cmd,
                 "load_w": round(self.load_f, 1) if self.load_f is not None else None,
+                "cpu_power_w": round(self.last_cpu_w, 1) if self.last_cpu_w is not None else None,
+                "gpu_power_w": round(self.last_gpu_w, 1) if self.last_gpu_w is not None else None,
+                "cpu_power_weight": self.cpu_power_weight,
                 "emergency": self.emergency,
                 "safe_mode": self.safe_mode,
                 "gpu_asleep": self.sensor.gpu.asleep,
@@ -969,8 +978,14 @@ class AdaptiveFanController:
             self._cpu_read_fail = 0
         gpu, gpu_w, gpu_ok = self.sensor.gpu.read()
         cpu_w = self.sensor.read_cpu_power()
-        parts = [w for w in (cpu_w, gpu_w) if w is not None]
-        return Sample(t, cpu, gpu, gpu_ok, sum(parts) if parts else None)
+        self.last_cpu_w, self.last_gpu_w = cpu_w, gpu_w
+        if cpu_w is not None or gpu_w is not None:
+            eff_cpu = (cpu_w * self.cpu_power_weight) if cpu_w is not None else 0.0
+            eff_gpu = gpu_w if gpu_w is not None else 0.0
+            load_w = eff_cpu + eff_gpu
+        else:
+            load_w = None
+        return Sample(t, cpu, gpu, gpu_ok, load_w)
 
     def _apply_command(self, cmd: Optional[int]) -> None:
         if self.dry_run:
